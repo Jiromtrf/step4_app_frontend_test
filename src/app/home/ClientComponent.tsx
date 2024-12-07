@@ -36,7 +36,7 @@ const ClientComponent: React.FC<ClientComponentProps> = ({ initialMessages }) =>
       afternoon: ['やっほー！今日も頑張ろう！', '/afternoon.webp'],
       evening: ['ここからがコアタイムだねー！', '/evening.webp'],
       night: ['遅くまでえらいねー。もうひとふんばり！', '/night.webp'],
-      lateNight: ['お疲れ様！そろそろ寝た方がいいよ！', '/lateNight.webp'],
+      lateNight: ['お疲れ様！そろそろ寝た方がいいよ！', '/night.webp'],
     };
     let selected = messages.lateNight;
 
