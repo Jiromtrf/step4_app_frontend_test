@@ -3,7 +3,14 @@ import ClientComponent from './ClientComponent';
 
 // サーバーサイドでメッセージを取得
 const fetchInitialMessages = async () => {
-  const response = await fetch('http://localhost:3000/api/get_messages', {
+  // 環境変数からベースURLを取得
+  const baseUrl = process.env.NEXTAUTH_URL;
+
+  if (!baseUrl) {
+    throw new Error('NEXTAUTH_URL is not defined in the environment variables');
+  }
+
+  const response = await fetch(`${baseUrl}/api/get_messages`, {
     cache: 'no-store', // キャッシュを無効化
   });
 
@@ -15,7 +22,7 @@ const fetchInitialMessages = async () => {
   return data.data;
 };
 
-const Home = async () => {
+const SignIn = async () => {
   const initialMessages = await fetchInitialMessages();
 
   return (
@@ -25,5 +32,4 @@ const Home = async () => {
   );
 };
 
-export default Home;
-
+export default SignIn;

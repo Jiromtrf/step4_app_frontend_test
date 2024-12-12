@@ -1,9 +1,9 @@
-import Home from "./components/Home"; 
+import SignIn from "./auth/signin/page"; 
 
 export default function Index() {
   return (
     <div className="background">
-      <Home />
+      <SignIn />
     </div>
   );
 }

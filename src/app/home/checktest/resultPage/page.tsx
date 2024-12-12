@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 
-export default function ResultPage() {
+// Suspense 内で使用するコンテンツを別コンポーネントとして定義
+function ResultPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const scoreParam = searchParams.get("score");
@@ -17,7 +18,7 @@ export default function ResultPage() {
         router.push("/home");
     };
 
-    // Play sound based on percentage
+    // パーセンテージに基づいてサウンドを再生
     useEffect(() => {
         let audioSrc = "";
         if (percentage >= 80) {
@@ -32,7 +33,7 @@ export default function ResultPage() {
         audio.play();
     }, [percentage]);
 
-    // Determine message based on percentage
+    // パーセンテージに基づいてメッセージを表示
     const getMessage = () => {
         if (percentage >= 80) {
             return "素晴らしい！高得点おめでとうございます！🎉";
@@ -67,3 +68,12 @@ export default function ResultPage() {
     );
 }
 
+export const dynamic = "force-dynamic";
+
+export default function ResultPage() {
+    return (
+        <Suspense fallback={<div>読み込み中...</div>}>
+            <ResultPageContent />
+        </Suspense>
+    );
+}

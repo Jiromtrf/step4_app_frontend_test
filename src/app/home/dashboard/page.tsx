@@ -141,7 +141,7 @@ export default function Dashboard() {
           </div>
           {/* 女の子の画像 */}
           <Image
-            src="/Gal1.webp"
+            src="/gal1.webp"
             alt="Girl Image"
             width={300}
             height={300}
@@ -180,7 +180,7 @@ export default function Dashboard() {
             </select>
           </div>
 
-          <RadarChart skills={skills} goals={roles[role]} />
+          <RadarChart skills={skills} goals={roles[role]} stepSize={20} />
         </div>
       </div>
     </div>
