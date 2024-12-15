@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import styles from '../page.module.css';
+import styles from '../page.module.css'; // 修正済みパス
 import Image from 'next/image';
 import SignoutButton from '../components/SignoutButton';
 import { AiOutlineSwap } from 'react-icons/ai';
@@ -23,12 +23,12 @@ interface ClientComponentProps {
 const ClientComponent: React.FC<ClientComponentProps> = ({ initialMessages }) => {
   const [messages] = useState<Message[]>(initialMessages);
   const [message, setMessage] = useState<string>('');
-  const [greetingMessage, setGreetingMessage] = useState<string>(''); // 挨拶メッセージ全体
+  const [greetingMessage, setGreetingMessage] = useState<string>('');
   const [backgroundImage, setBackgroundImage] = useState<string>('/gal1.webp');
   const [isSidebarVisible, setSidebarVisible] = useState<boolean>(false);
   const [isMessagesVisible, setMessagesVisible] = useState<boolean>(true);
-  const [currentCharacter, setCurrentCharacter] = useState<string>('Girl1.png');
-  const [isFirstClick, setFirstClick] = useState<boolean>(true); // 初回クリックの追跡
+  const [currentCharacter, setCurrentCharacter] = useState<string>('girl1.webp');
+  const [isFirstClick, setFirstClick] = useState<boolean>(true);
 
   const girlAudio = useRef<HTMLAudioElement | null>(null);
   const boyAudio = useRef<HTMLAudioElement | null>(null);
@@ -85,7 +85,7 @@ const ClientComponent: React.FC<ClientComponentProps> = ({ initialMessages }) =>
   };
 
   const toggleCharacter = () => {
-    if (currentCharacter === 'Girl1.png') {
+    if (currentCharacter === 'girl1.webp') {
       girlAudio.current?.pause();
       girlAudio.current!.currentTime = 0;
       boyAudio.current?.play();
@@ -95,7 +95,7 @@ const ClientComponent: React.FC<ClientComponentProps> = ({ initialMessages }) =>
       girlAudio.current?.play();
     }
     setCurrentCharacter((prevCharacter) =>
-      prevCharacter === 'Girl1.png' ? 'Boy1.png' : 'Girl1.png'
+      prevCharacter === 'girl1.webp' ? 'Boy1.webp' : 'girl1.webp'
     );
   };
 
@@ -130,16 +130,17 @@ const ClientComponent: React.FC<ClientComponentProps> = ({ initialMessages }) =>
         }}
       />
 
+
       {/* サイドバー */}
       <div className={`${styles.sidebar} ${isSidebarVisible ? styles.sidebarVisible : styles.sidebarHidden}`}>
         <h2>機能一覧</h2>
         <ul className={styles.sidebarList}>
           <li><Link href="/home/dashboard">ステータス確認</Link></li>
-          <li><a href="#">宿題の進捗</a></li>
-          <li><a href="#">講義資料</a></li>
+          <li><a href="https://www.notion.so/tech0-wiki/b3f8af9f46334ce3bf32b33a33931210?pvs=4">宿題の進捗</a></li>
+          <li><a href="https://www.notion.so/tech0-wiki/DB-d0fbb0915f00436da682a46420c22791?pvs=4">講義資料</a></li>
           <li><Link href="/home/checktest">理解度チェック</Link></li>
-          <li><a href="#">勉強する</a></li>
-          <li><a href="#">遊びに行く</a></li>
+          <li><Link href="/home/maintenance">勉強する</Link></li>
+          <li><Link href="/home/breather">遊びに行く</Link></li>
           <li><Link href="/home/teaming">チーミング</Link></li>
           <li><SignoutButton /></li>
         </ul>
@@ -151,10 +152,7 @@ const ClientComponent: React.FC<ClientComponentProps> = ({ initialMessages }) =>
 
       {/* コンテンツ */}
       <div className={styles.content}>
-        {/* 挨拶メッセージ */}
-        <div className={styles.greeting}>
-          {greetingMessage || '...'} {/* 挨拶メッセージが未設定の場合はプレースホルダー */}
-        </div>
+        <div className={styles.greeting}>{greetingMessage || '...'}</div>
         <button onClick={toggleMessages} className={styles.messageToggleButton}>
           {isMessagesVisible ? 'メッセージ一覧を隠す' : 'メッセージ一覧を表示'}
         </button>
@@ -188,9 +186,8 @@ const ClientComponent: React.FC<ClientComponentProps> = ({ initialMessages }) =>
           <button className={styles.button}>送信</button>
         </div>
       </div>
-
-      {/* キャラクター切り替えボタン */}
-      <button
+            {/* キャラクター切り替えボタン */}
+            <button
         onClick={toggleCharacter}
         className={styles.characterToggleButton}
         style={{

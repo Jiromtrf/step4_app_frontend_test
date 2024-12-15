@@ -50,24 +50,38 @@ export default function Dashboard() {
   const { data: session, status } = useSession();
   const [skills, setSkills] = useState<Skills>({ biz: 0, design: 0, tech: 0 });
   const [role, setRole] = useState<Roles>("PdM");
+  const [userName, setUserName] = useState<string>("");
   const [message, setMessage] = useState<string>("");
+  const [selectedDate, setSelectedDate] = useState<string>(""); // 日付選択用
   const [orientations, setOrientations] = useState<string[]>([]); // 初期値を空配列に設定
 
   useEffect(() => {
     if (session && session.accessToken) {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      console.log("Fetching skills for current user");
 
-      // Fetch user skills
-      fetch(`${baseUrl}/api/user/skills`, {
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      console.log("API Base URL:", baseUrl); // デバッグ用
+      const url = `${baseUrl}/api/user/skills${selectedDate ? `?date=${selectedDate}` : ""}`;
+
+      fetch(url, {
         headers: {
           Authorization: `Bearer ${session.accessToken}`,
         },
       })
-        .then((res) => res.json())
-        .then((data: { biz: number; design: number; tech: number }) => {
-          setSkills({ biz: data.biz, design: data.design, tech: data.tech });
+        .then((res) => {
+          if (!res.ok) {
+            return res.json().then((errorData) => {
+              throw new Error(`Failed to fetch skills data: ${errorData.detail || res.statusText}`);
+            });
+          }
+          return res.json();
         })
-        .catch((err) => console.error("Error fetching skills:", err.message));
+        .then((data: { biz: number; design: number; tech: number; name: string }) => {
+          console.log('Received data:', data);
+          setSkills({ biz: data.biz, design: data.design, tech: data.tech });
+          setUserName(data.name);
+        })
+        .catch((err) => console.error('Error fetching skills:', err.message));
 
       // Fetch user orientations
       fetch(`${baseUrl}/api/user/orientation`, {
@@ -81,7 +95,7 @@ export default function Dashboard() {
         })
         .catch((err) => console.error("Error fetching orientations:", err.message));
     }
-  }, [session]);
+  }, [session, selectedDate]); // selectedDate変更時にも再フェッチ
 
   useEffect(() => {
     const goals = roles[role];
@@ -138,8 +152,6 @@ export default function Dashboard() {
   
     setMessage(chosenMessage);
   }, [role, skills, orientations]);
-  
-  
 
   if (status === "loading") {
     return <p>Loading...</p>;
@@ -150,15 +162,23 @@ export default function Dashboard() {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#f5deb3",
-        minHeight: "100vh",
-      }}
-    >
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#f5deb3", minHeight: "100vh" }}>
+      {/* 日付選択 */}
+      <div style={{ position: "absolute", top: "60px", left: "20px" }}>
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          style={{
+            padding: "0.5rem",
+            borderRadius: "4px",
+            background: "#f5f5f5",
+            border: "1px solid #cccccc",
+            color: "#333",
+          }}
+        />
+      </div>
+      {/* ホームボタンを左上に配置 */}
       <div style={{ position: "absolute", top: "20px", left: "20px" }}>
         <HomeButton />
       </div>
@@ -173,14 +193,9 @@ export default function Dashboard() {
           gap: "2rem",
         }}
       >
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
+        {/* 女の子とフキダシ */}
+        <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          {/* フキダシ */}
           <div
             style={{
               position: "relative",
@@ -215,8 +230,9 @@ export default function Dashboard() {
               }}
             ></div>
           </div>
+          {/* 女の子の画像 */}
           <Image
-            src="/Girl1.png"
+            src="/gal1.webp"
             alt="Girl Image"
             width={300}
             height={300}
@@ -227,7 +243,14 @@ export default function Dashboard() {
             }}
           />
         </div>
+
+        {/* レーダーチャート */}
         <div>
+          <h1 style={{ color: "#333", marginBottom: "1rem", textAlign: "center" }}>
+            {userName} さん
+          </h1>
+
+          {/* ドロップダウンリスト */}
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
             <select
               onChange={(e) => setRole(e.target.value as Roles)}
@@ -240,13 +263,14 @@ export default function Dashboard() {
                 color: "#333",
               }}
             >
-              {Object.keys(roles).map((r) => (
-                <option key={r} value={r}>
-                  {r}
+              {Object.keys(roles).map((role) => (
+                <option key={role} value={role}>
+                  {role}
                 </option>
               ))}
             </select>
           </div>
+
           <RadarChart skills={skills} goals={roles[role]} stepSize={20} />
         </div>
       </div>
