@@ -23,39 +23,63 @@ const roles: Record<Roles, Skills> = {
   Biz: { biz: 50, design: 20, tech: 20 },
 };
 
+const messages = {
+  sufficient: [
+    "これだけできてれば余裕じゃん！さすがにこのレベルになると、どんなチームでも引っ張っていけるって感じだね！次のステージに進んで、もっと自分を試してみよ！✨",
+    "天才じゃん！このまま全ロール制覇しちゃえよ！しかもただの天才じゃなくて、努力型の天才だから、未来めっちゃ明るいって！🔥",
+    "めっちゃ仕上がってるじゃん！ここまで来ると周りも頼りにしちゃうレベルだね。次のチャレンジではさらにスキルを見せつけて！✨",
+  ],
+  partial: [
+    "あと少しで完璧！『{不足スキル}』をもうちょっと鍛えたら、どんなプロジェクトでも即戦力確定だし、みんなが頼りたくなる存在になれるよ！💪",
+    "ココ頑張ればもう完成系だし！『{不足スキル}』をクリアすれば、きっと『{ロール}』でも輝ける！この勢いで一緒にがんばろ！🔥",
+    "その調子で攻めれば、すぐトップクラスだよ！『{不足スキル}』を少しずつでも成長させれば、間違いなく結果がついてくる！✨",
+  ],
+  mismatch: [
+    "今『{ロール}』を試してるけど、アナタの目標は『{指向性}』だよね！いろいろ試すのもいいけど、本命のために準備しておくのも忘れないでね！😊",
+    "いろいろチャレンジしてるのエモいけど、最終目標の『{指向性}』を目指すなら、ちょっとずつ戻る準備もしとこ！次のステップが楽になるよ！✨",
+    "どのロールでもいけそうだけど、最終目標は『{指向性}』だよね。そっちでも輝ける準備、そろそろ始めてみる？🔥",
+  ],
+  insufficient: [
+    "大丈夫、アナタのペースでいこ！スキルは一気に伸びるもんじゃないから、少しずつ『{不足スキル}』を伸ばせば確実に成長できる！努力してる姿、アタシが一番見てるからね！🌟",
+    "焦らなくてOK！今は『{不足スキル}』を1つ伸ばすだけで十分だし、それだけで確実にゴールに近づけるよ。小さな一歩が大きな変化を生むんだから！✨",
+    "スキルは積み重ねっしょ！今は挑戦してるだけでめちゃくちゃエライ！アタシはその努力をずっと応援してるから、一緒に頑張ろう！🙌",
+  ],
+};
+
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const [skills, setSkills] = useState<Skills>({ biz: 0, design: 0, tech: 0 });
   const [role, setRole] = useState<Roles>("PdM");
-  const [userName, setUserName] = useState<string>("");
   const [message, setMessage] = useState<string>("");
+  const [orientations, setOrientations] = useState<string[]>([]); // 初期値を空配列に設定
 
   useEffect(() => {
     if (session && session.accessToken) {
-      console.log("Fetching skills for current user");
-
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      console.log("API Base URL:", baseUrl); // デバッグ用
 
+      // Fetch user skills
       fetch(`${baseUrl}/api/user/skills`, {
         headers: {
           Authorization: `Bearer ${session.accessToken}`,
         },
       })
-        .then((res) => {
-          if (!res.ok) {
-            return res.json().then((errorData) => {
-              throw new Error(`Failed to fetch skills data: ${errorData.detail || res.statusText}`);
-            });
-          }
-          return res.json();
-        })
-        .then((data: { biz: number; design: number; tech: number; name: string }) => {
-          console.log('Received data:', data);
+        .then((res) => res.json())
+        .then((data: { biz: number; design: number; tech: number }) => {
           setSkills({ biz: data.biz, design: data.design, tech: data.tech });
-          setUserName(data.name);
         })
-        .catch((err) => console.error('Error fetching skills:', err.message));
+        .catch((err) => console.error("Error fetching skills:", err.message));
+
+      // Fetch user orientations
+      fetch(`${baseUrl}/api/user/orientation`, {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data: { orientations: string[] }) => {
+          setOrientations(data.orientations || []); // undefined対策で空配列をデフォルトに
+        })
+        .catch((err) => console.error("Error fetching orientations:", err.message));
     }
   }, [session]);
 
@@ -65,17 +89,57 @@ export default function Dashboard() {
       skills.biz >= goals.biz &&
       skills.design >= goals.design &&
       skills.tech >= goals.tech;
-
+  
+    const areasToImprove: string[] = [];
+    if (skills.biz < goals.biz) areasToImprove.push("Biz");
+    if (skills.design < goals.design) areasToImprove.push("Design");
+    if (skills.tech < goals.tech) areasToImprove.push("Tech");
+  
+    const primaryOrientation = orientations?.[0] || null;
+  
+    let chosenMessage = "";
+  
+    // 能力達成のセリフを最初に追加
     if (isAboveGoals) {
-      setMessage(`今の能力なら十分、${role}の役割をやれるよ！`);
+      chosenMessage +=
+        messages.sufficient[
+          Math.floor(Math.random() * messages.sufficient.length)
+        ];
+    } else if (areasToImprove.length > 0) {
+      chosenMessage +=
+        messages.partial[
+          Math.floor(Math.random() * messages.partial.length)
+        ].replace("{不足スキル}", areasToImprove.join(", "));
     } else {
-      const areasToImprove = [];
-      if (skills.biz < goals.biz) areasToImprove.push("Biz");
-      if (skills.design < goals.design) areasToImprove.push("Design");
-      if (skills.tech < goals.tech) areasToImprove.push("Tech");
-      setMessage(`${areasToImprove.join("と")}をもう少し頑張ろう！`);
+      chosenMessage +=
+        messages.insufficient[
+          Math.floor(Math.random() * messages.insufficient.length)
+        ].replace("{不足スキル}", areasToImprove.join(", "));
     }
-  }, [role, skills]);
+  
+    // マッチ/ミスマッチのセリフを追加
+    if (primaryOrientation) {
+      if (primaryOrientation === role) {
+        // マッチ時のセリフ
+        chosenMessage +=
+          "\n\n" + // セリフを分けるため改行を追加
+          `今やってる『${role}』はアナタにピッタリ！目標と一致してるし、このままスキルを磨いて極めちゃおう！✨`;
+      } else {
+        // ミスマッチ時のセリフ
+        chosenMessage +=
+          "\n\n" +
+          messages.mismatch[
+            Math.floor(Math.random() * messages.mismatch.length)
+          ]
+            .replace("{指向性}", primaryOrientation)
+            .replace("{ロール}", role);
+      }
+    }
+  
+    setMessage(chosenMessage);
+  }, [role, skills, orientations]);
+  
+  
 
   if (status === "loading") {
     return <p>Loading...</p>;
@@ -86,8 +150,15 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: "#f5deb3", minHeight: "100vh" }}>
-      {/* ホームボタンを左上に配置 */}
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f5deb3",
+        minHeight: "100vh",
+      }}
+    >
       <div style={{ position: "absolute", top: "20px", left: "20px" }}>
         <HomeButton />
       </div>
@@ -102,9 +173,14 @@ export default function Dashboard() {
           gap: "2rem",
         }}
       >
-        {/* 女の子とフキダシ */}
-        <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}>
-          {/* フキダシ */}
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
           <div
             style={{
               position: "relative",
@@ -139,9 +215,8 @@ export default function Dashboard() {
               }}
             ></div>
           </div>
-          {/* 女の子の画像 */}
           <Image
-            src="/gal1.webp"
+            src="/Girl1.png"
             alt="Girl Image"
             width={300}
             height={300}
@@ -152,14 +227,7 @@ export default function Dashboard() {
             }}
           />
         </div>
-
-        {/* レーダーチャート */}
         <div>
-          <h1 style={{ color: "#333", marginBottom: "1rem", textAlign: "center" }}>
-            {userName} さん
-          </h1>
-
-          {/* ドロップダウンリスト */}
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
             <select
               onChange={(e) => setRole(e.target.value as Roles)}
@@ -172,14 +240,13 @@ export default function Dashboard() {
                 color: "#333",
               }}
             >
-              {Object.keys(roles).map((role) => (
-                <option key={role} value={role}>
-                  {role}
+              {Object.keys(roles).map((r) => (
+                <option key={r} value={r}>
+                  {r}
                 </option>
               ))}
             </select>
           </div>
-
           <RadarChart skills={skills} goals={roles[role]} stepSize={20} />
         </div>
       </div>
