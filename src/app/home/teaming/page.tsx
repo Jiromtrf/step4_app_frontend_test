@@ -45,8 +45,26 @@ const phaseGoals = {
   step4: { biz: 250, design: 200, tech: 180 },
 };
 
+const praiseMessages = [
+  "スゴッ！『{param}』は完璧じゃん！その調子で突き抜けちゃおう！✨",
+  "さっすが～！『{param}』がバッチリ仕上がってて最高だよ！次のステージも余裕でしょ～！🔥",
+  "『{param}』完璧すぎて、もはやレジェンド級じゃん！みんなも惚れちゃうよ～！💖",
+];
+const improvementMessages = [
+  "『{param}』はあと少しだね！✨",
+  "『{param}』をもうちょっとだけ増やせたら完璧だよ！💪",
+  "『{param}』の強い人を入れるのもいいかもね！😊",
+];
+const teamComments = [
+  "チームのバランスいい感じじゃん！このまま突っ走っちゃおう！✨",
+  "みんなそれぞれの強みを発揮してて最高だね！🔥",
+  "お互い助け合ってるのが伝わってきて、めっちゃエモいチーム！がんばろ～！💖",
+];
+
+
 export default function Teaming() {
   const { data: session } = useSession();
+  const [message, setMessage] = useState<string>(""); // 女の子のメッセージ
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<Roles>({
     PdM: null,
@@ -86,6 +104,55 @@ export default function Teaming() {
       Modal.setAppElement('body');
     }
   }, []);
+
+  useEffect(() => {
+    const achievedParams: string[] = [];
+    const lackingParams: string[] = [];
+  
+    if (chartData.biz >= teamGoals.biz) {
+      achievedParams.push("Biz");
+    } else {
+      lackingParams.push("Biz");
+    }
+  
+    if (chartData.design >= teamGoals.design) {
+      achievedParams.push("Design");
+    } else {
+      lackingParams.push("Design");
+    }
+  
+    if (chartData.tech >= teamGoals.tech) {
+      achievedParams.push("Tech");
+    } else {
+      lackingParams.push("Tech");
+    }
+  
+    let chosenMessage = "";
+  
+    if (achievedParams.length > 0) {
+      chosenMessage += achievedParams
+        .map((param) =>
+          praiseMessages[Math.floor(Math.random() * praiseMessages.length)].replace("{param}", param)
+        )
+        .join("\n");
+    }
+  
+    if (lackingParams.length > 0) {
+      chosenMessage += "\n\n";
+      chosenMessage += lackingParams
+        .map((param) =>
+          improvementMessages[Math.floor(Math.random() * improvementMessages.length)].replace("{param}", param)
+        )
+        .join("\n");
+    }
+  
+    chosenMessage += "\n\n";
+    chosenMessage += teamComments[Math.floor(Math.random() * teamComments.length)];
+  
+    setMessage(chosenMessage);
+  }, [chartData, teamGoals]);
+  
+  
 
   // 現在の学習フェーズが変更されたときに目標値を更新
   useEffect(() => {
@@ -343,89 +410,112 @@ export default function Teaming() {
       </aside>
 
       <main className={styles.main}>
-        {/* 学習フェーズのドロップダウンを追加 */}
-        <div className={styles.phaseSelector}>
-          <label htmlFor="phase-select">学習フェーズ: </label>
-          <select
-            id="phase-select"
-            value={currentPhase}
-            onChange={(e) => setCurrentPhase(e.target.value as keyof typeof phaseGoals)}
-          >
-            {Object.keys(phaseGoals).map((phase) => (
-              <option key={phase} value={phase}>
-                {phase.toUpperCase()}
-              </option>
-            ))}
-          </select>
+  {/* 学習フェーズのドロップダウン */}
+  <div className={styles.phaseSelector}>
+    <label htmlFor="phase-select">学習フェーズ: </label>
+    <select
+      id="phase-select"
+      value={currentPhase}
+      onChange={(e) => setCurrentPhase(e.target.value as keyof typeof phaseGoals)}
+    >
+      {Object.keys(phaseGoals).map((phase) => (
+        <option key={phase} value={phase}>
+          {phase.toUpperCase()}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  {currentTeamId ? (
+    <>
+      {/* チーム構成 */}
+      <div className={styles.roles} style={{ marginTop: "2rem" }}>
+        {(["PdM", "Biz", "Tech", "Design"] as (keyof Roles)[]).map((role) => {
+          const roleData = roles[role];
+          return (
+            <div key={role} className={styles.roleCard}>
+              <div className={styles.roleHeader} style={{ backgroundColor: getRoleColor(role) }}>
+                {role}
+                <button onClick={() => handleAddMemberClick(role)} className={styles.addButton}>
+                  +
+                </button>
+              </div>
+              {roleData && (
+                <div className={styles.roleDetails}>
+                  {Array.isArray(roleData) ? (
+                    roleData.map((member) => (
+                      <div key={member.user_id} className={styles.member}>
+                        <Image
+                          src={member.avatar_url || "/default-avatar.png"}
+                          alt={member.name}
+                          className={styles.avatar}
+                          width={50}
+                          height={50}
+                        />
+                        <p>{member.name}</p>
+                        <button onClick={() => handleRemoveMember(role)}>メンバーを外す</button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className={styles.member}>
+                      <Image
+                        src={roleData.avatar_url || "/default-avatar.png"}
+                        alt={roleData.name}
+                        className={styles.avatar}
+                        width={50}
+                        height={50}
+                      />
+                      <p>{roleData.name}</p>
+                      <button onClick={() => handleRemoveMember(role)}>メンバーを外す</button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 女の子とレーダーチャート */}
+      <div className={styles.girlAndChart}>
+        {/* レーダーチャート */}
+        <div className={styles.chartContainer}>
+          <RadarChart
+            skills={chartData}
+            goals={teamGoals}
+            mode="team"
+            stepSize={50}
+            labels={{ goals: "目標値", skills: "チームの能力値" }}
+          />
         </div>
 
-        {currentTeamId ? (
-          <>
-            <div className={styles.roles}>
-              {(["PdM", "Biz", "Tech", "Design"] as (keyof Roles)[]).map((role) => {
-                const roleData = roles[role];
-                return (
-                  <div key={role} className={styles.roleCard}>
-                    <div className={styles.roleHeader} style={{ backgroundColor: getRoleColor(role) }}>
-                      {role}
-                      <button onClick={() => handleAddMemberClick(role)} className={styles.addButton}>
-                        +
-                      </button>
-                    </div>
-                    {roleData && (
-                      <div className={styles.roleDetails}>
-                        {Array.isArray(roleData) ? (
-                          roleData.map((member) => (
-                            <div key={member.user_id} className={styles.member}>
-                              <Image
-                                src={member.avatar_url || "/default-avatar.png"}
-                                alt={member.name}
-                                className={styles.avatar}
-                                width={50}
-                                height={50}
-                              />
-                              <p>{member.name}</p>
-                              <button onClick={() => handleRemoveMember(role)}>メンバーを外す</button>
-                            </div>
-                          ))
-                        ) : (
-                          <div className={styles.member}>
-                            <Image
-                              src={roleData.avatar_url || "/default-avatar.png"}
-                              alt={roleData.name}
-                              className={styles.avatar}
-                              width={50}
-                              height={50}
-                            />
-                            <p>{roleData.name}</p>
-                            <button onClick={() => handleRemoveMember(role)}>メンバーを外す</button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        {/* 吹き出し */}
+        <div className={styles.speechBubble}>{message}</div>
 
-            <div className={styles.chartContainer}>
-              <RadarChart
-                skills={chartData}
-                goals={teamGoals}
-                mode="team"
-                stepSize={50} // チーム用にstepSizeを50に設定
-                labels={{ goals: "目標値", skills: "チームの能力値" }} // 凡例を変更
-              />
-            </div>
-          </>
-        ) : (
-          <div>
-            <p>現在、あなたはどのチームにも所属していません。</p>
-            <p>新たにチームを作成しますか？</p>
-            <button onClick={() => setIsCreateTeamModalOpen(true)}>チームを作成</button>
-          </div>
-        )}
-      </main>
+        {/* 女の子 */}
+        <div className={styles.girlContainer}>
+          <Image
+            src="/girl1.webp"
+            alt="Girl Image"
+            width={200}
+            height={200}
+            className={styles.girlImage}
+          />
+        </div>
+      </div>
+
+    </>
+  ) : (
+    <div>
+      <p>現在、あなたはどのチームにも所属していません。</p>
+      <p>新たにチームを作成しますか？</p>
+      <button onClick={() => setIsCreateTeamModalOpen(true)}>チームを作成</button>
+    </div>
+  )}
+</main>
+
+
+
 
       {/* メンバー検索モーダル */}
       <Modal
